@@ -1,0 +1,6 @@
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\bin\Debug\SynLight_console.exe.config
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\bin\Debug\SynLight_console.exe
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\bin\Debug\SynLight_console.pdb
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\obj\Debug\SynLight_console.csproj.CoreCompileInputs.cache
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\obj\Debug\SynLight_console.exe
+C:\Users\cvermot\source\repos\ConsoleApp1\ConsoleApp1\obj\Debug\SynLight_console.pdb
