@@ -1,4 +1,4 @@
-# SynLight
+# SynLight_console
 
 **[Ambient lighting system](https://en.wikipedia.org/wiki/Ambilight) for Windows**
 
