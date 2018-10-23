@@ -103,7 +103,14 @@ namespace ConsoleApp1
             {
                 Console.WriteLine("- Tick - " + tickCount++ + "\t currentSleepTime = " + currentSleepTime);
                 Tick();
-                System.Threading.Thread.Sleep(currentSleepTime);
+                if(useDynamicTiming)
+                {
+                    System.Threading.Thread.Sleep(currentSleepTime);
+                }
+                else
+                {
+                    System.Threading.Thread.Sleep(SleepingTime); 
+                }
             }
         }
         static void Tick()
