@@ -14,12 +14,12 @@ namespace SynLight.View
         public MainWindow()
         {
 
-            Model.Startup.StartOrKill();
+            /*Model.Startup.StartOrKill();
             Model.Startup.CleanFiles();
             if (Model.Startup.ShowOrHide())
                 Hide();
             SetLanguageDictionary();
-            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;*/
             InitializeComponent();
             //DataContext = new MainViewModel(); //ALREADY SET IN XAML
         }

@@ -51,8 +51,8 @@ namespace SynLight.Model
                     System.Threading.Thread.Sleep(Properties.Settings.Default.UDPwaitTime); //Wait for a short while for the ESP to answer and give the time to 'recv ' to trigger
 
                     //DEBUG PURPOSE
-                    //staticConnected = true;
-                    //return;
+                    staticConnected = true;
+                    return;
                     //END DEBUG
 
                     if (staticConnected) //If we received "pong"
