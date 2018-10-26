@@ -6,7 +6,6 @@ using System.Windows;
 using System;
 using System.Net.Sockets;
 using System.Drawing.Drawing2D;
-using System.Diagnostics;
 
 namespace ConsoleApp1
 {
@@ -31,31 +30,11 @@ namespace ConsoleApp1
 
         #region Variables not to touch
         static Socket sock = new Socket(SocketType.Dgram, ProtocolType.Udp);
-        /*static Rectangle edgeLeft;
-        static Rectangle edgeRight;
-        static Rectangle edgeTop;
-        static Rectangle edgeBot;
-        static Bitmap bmpScreenshot;*/
         static Bitmap scaledBmpScreenshot;
-        //static Bitmap secondScaledBmpScreenshot;
         static Bitmap scalededgeLeft;
         static Bitmap scalededgeRight;
         static Bitmap scalededgeTop;
         static Bitmap scalededgeBot;
-        /*static bool screenConfigured = false;
-        static bool debug = false;
-        static int startX;
-        static int startY;
-        static int endX;
-        static int endY;
-        static int hX;
-        static int hY;
-        static Rectangle rect;
-        static Bitmap bmp;*/
-
-        /*static double sRed = 255;
-        static double sGreen = 255;
-        static double sBlue = 255;*/
         static List<byte> LastByteToSend = new List<byte>(0);
         static List<byte> newByteToSend = new List<byte>(0);
         static List<byte> byteToSend;
@@ -68,11 +47,13 @@ namespace ConsoleApp1
         static int startTimeInt;
         static int endTimeInt;
         static int currentTimeInt;
+        static long tickCount = 0;
 
         static double fluxRatio = 1.0;
 
         static int difference = 0;
-        static int currentSleepTime = 5;       
+        static int currentSleepTime = 5;
+        const double coef = Width * Height * 2;
 
         enum corner
         {
@@ -86,8 +67,7 @@ namespace ConsoleApp1
             terminalPayload = 3,
         }
         #endregion
-        static long tickCount = 0;
-
+        
         static void Main(string[] args)
         {
             Console.WriteLine("- Starting -");
@@ -101,7 +81,7 @@ namespace ConsoleApp1
 
             while (true)
             {
-                Console.WriteLine("- Tick - " + tickCount++ + "\t currentSleepTime = " + currentSleepTime);
+                Console.WriteLine("- Tick - " + tickCount++ + "\t currentSleepTime = " + currentSleepTime + "\t difference = " + difference);
                 Tick();
                 if(useDynamicTiming)
                 {
@@ -166,10 +146,10 @@ namespace ConsoleApp1
             {
                 if (false)
                 {
-                    ResizeSizes(scalededgeLeft).Save("1Left.bmp");
+                    /*ResizeSizes(scalededgeLeft).Save("1Left.bmp");
                     ResizeSizes(scalededgeRight).Save("3Right.bmp");
                     ResizeTops(scalededgeTop).Save("2Top.bmp");
-                    ResizeTops(scalededgeBot).Save("4Bot.bmp");
+                    ResizeTops(scalededgeBot).Save("4Bot.bmp");*/
                     Resize(scaledBmpScreenshot).Save("5full.bmp");
                 }
             }
@@ -452,10 +432,21 @@ namespace ConsoleApp1
             newByteToSend = new List<byte>(0);
             if (LowPassFilter)//low-pass filter enabled by default
             {
-                for (int n = byteToSend.Count; n < LastByteToSend.Count && n < byteToSend.Count + 6; n++) { LastByteToSend.Add(0); }
-                for (int n = 0; n < byteToSend.Count; n++) { newByteToSend.Add((byte)(byteToSend[n] >> 1)); }
-                for (int n = 0; n < byteToSend.Count && n < LastByteToSend.Count; n++) { newByteToSend[n] += (byte)(LastByteToSend[n] >> 1); }
-                LastByteToSend = new List<byte>(byteToSend);
+                while (LastByteToSend.Count < byteToSend.Count) { LastByteToSend.Add(0); } //In case X/Y increased
+
+                int odd = 0; //rounding errorLastByteToSend.Add(0);
+                for (int n = 0; n < byteToSend.Count; n++)
+                {
+                    odd = byteToSend[n] + LastByteToSend[n];
+                    if(odd % 2 != 0) //To correct the -1 error rounding
+                    {
+                        odd++;
+                    }
+                    odd = odd / 2;
+                    newByteToSend.Add((byte)odd); //newByteToSend[n] = rounded-up sum
+                }
+                //LastByteToSend = new List<byte>(byteToSend);
+                LastByteToSend = new List<byte>(newByteToSend);
             }
             else
             {
@@ -463,57 +454,8 @@ namespace ConsoleApp1
             }
 
 
-            if (UpDown != 0)
-            {
-                RotateArray();
-            }
-
-
-            if (FluxFilter)
-            {
-                startTimeInt = startTime.Hour * 60 + startTime.Minute;
-                endTimeInt = endTime.Hour * 60 + endTime.Minute;
-                currentTimeInt = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
-
-                if (currentTimeInt > startTimeInt && currentTimeInt < endTimeInt)
-                {
-                    fluxRatio = (nmMinutesStop - nbMinutesStart) / nmMinutesStop;
-                }
-                else if (Math.Abs(currentTimeInt - endTimeInt) < nbMinutesStart)
-                {
-                    fluxRatio = (nmMinutesStop - nbMinutesStart + double.Parse(Math.Abs(currentTimeInt - endTimeInt).ToString())) / nmMinutesStop;
-                }
-                else if (currentTimeInt > midDay.Hour * 60 + midDay.Minute)
-                {
-                    currentTimeInt = (24 * 60) - currentTimeInt;
-                    if (Math.Abs(currentTimeInt - startTimeInt) < nbMinutesStart)
-                    {
-                        fluxRatio = (nmMinutesStop - nbMinutesStart + double.Parse(Math.Abs(currentTimeInt - startTimeInt).ToString())) / nmMinutesStop;
-                    }
-                }
-                for (int n = 2; n < byteToSend.Count - 2; n += 3)
-                {
-                    string s;
-                    byte b;
-
-                    s = (newByteToSend[n] * fluxRatio).ToString().Split(',')[0];
-                    b = byte.Parse(s);
-                    newByteToSend[n] = b;
-
-                    s = (newByteToSend[n - 1] * ((1 + fluxRatio) / 2)).ToString().Split(',')[0];
-                    b = byte.Parse(s);
-                    newByteToSend[n - 1] = b;
-
-                    s = (newByteToSend[n - 2] * (1 + (1 - fluxRatio) / 3)).ToString().Split(',')[0];
-                    short i = short.Parse(s);
-                    if (i > 255)
-                    {
-                        i = 255;
-                    }
-                    b = byte.Parse(i.ToString());
-                    newByteToSend[n - 2] = b;
-                }
-            }
+            if (UpDown != 0) { RotateArray(); }
+            if (FluxFilter) { Flux(); }
 
             int packetSize = 1200;
             for (int n = 0; n + packetSize <= byteToSend.Count; n += packetSize)
@@ -548,24 +490,66 @@ namespace ConsoleApp1
 
         static void GetIdle()
         {
-            if (newByteToSend.Count != byteToSend.Count)
-            {
-                difference = 150;
-            }
+            if (newByteToSend.Count != byteToSend.Count) { difference = 10000; }
             else
             {
                 difference = 0;
-                for (int n = 0; n < byteToSend.Count; n++)
-                {
-                    difference += Math.Abs((int)(byteToSend[n]) - (int)(newByteToSend[n]));
-                }
+                for (int n = 0; n < byteToSend.Count; n++) { difference += Math.Abs((int)(byteToSend[n]) - (int)(newByteToSend[n])); }
             }
 
+            if(difference<=2) { LastByteToSend = byteToSend = newByteToSend; }
+
+            //Back-of-hand calculation to create a increasing idle timing
             double tmp = difference*5;
-            //tmp = Math.Max(0,Math.Min(5000.0,tmp));
-            tmp = (-tmp + 1000.0) / 500.0;
+            tmp = (-tmp + coef*2) / coef;
             currentSleepTime += (int)tmp;
             currentSleepTime = Math.Min(Math.Max(minIdleValue, currentSleepTime),maxIdleValue);
+        }
+        
+        static void Flux()
+        {
+            startTimeInt = startTime.Hour * 60 + startTime.Minute;
+            endTimeInt = endTime.Hour * 60 + endTime.Minute;
+            currentTimeInt = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
+
+            if (currentTimeInt > startTimeInt && currentTimeInt < endTimeInt)
+            {
+                fluxRatio = (nmMinutesStop - nbMinutesStart) / nmMinutesStop;
+            }
+            else if (Math.Abs(currentTimeInt - endTimeInt) < nbMinutesStart)
+            {
+                fluxRatio = (nmMinutesStop - nbMinutesStart + double.Parse(Math.Abs(currentTimeInt - endTimeInt).ToString())) / nmMinutesStop;
+            }
+            else if (currentTimeInt > midDay.Hour * 60 + midDay.Minute)
+            {
+                currentTimeInt = (24 * 60) - currentTimeInt;
+                if (Math.Abs(currentTimeInt - startTimeInt) < nbMinutesStart)
+                {
+                    fluxRatio = (nmMinutesStop - nbMinutesStart + double.Parse(Math.Abs(currentTimeInt - startTimeInt).ToString())) / nmMinutesStop;
+                }
+            }
+            for (int n = 2; n < byteToSend.Count - 2; n += 3)
+            {
+                string s;
+                byte b;
+
+                s = (newByteToSend[n] * fluxRatio).ToString().Split(',')[0];
+                b = byte.Parse(s);
+                newByteToSend[n] = b;
+
+                s = (newByteToSend[n - 1] * ((1 + fluxRatio) / 2)).ToString().Split(',')[0];
+                b = byte.Parse(s);
+                newByteToSend[n - 1] = b;
+
+                s = (newByteToSend[n - 2] * (1 + (1 - fluxRatio) / 3)).ToString().Split(',')[0];
+                short i = short.Parse(s);
+                if (i > 255)
+                {
+                    i = 255;
+                }
+                b = byte.Parse(i.ToString());
+                newByteToSend[n - 2] = b;
+            }
         }
     }
 }
