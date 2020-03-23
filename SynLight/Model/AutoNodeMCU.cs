@@ -9,15 +9,15 @@ namespace SynLight.Model
     public class AutoNodeMCU : ModelBase
     {
         #region Variables
-        protected Socket sock = new Socket(SocketType.Dgram, ProtocolType.Udp);
-        protected List<Socket> sockList;
-        protected IPEndPoint endPoint;
-        protected IPAddress nodeMCU;
-        protected int UDPPort = 8787; //Must match the next line UdpClient port and the ESP listenning port
-        protected UdpClient Client= new UdpClient(8787);
+        protected static Socket sock = new Socket(SocketType.Dgram, ProtocolType.Udp);
+        protected static List<Socket> sockList;
+        protected static IPEndPoint endPoint;
+        protected static IPAddress nodeMCU;
+        protected static int UDPPort = 8787; //Must match the next line UdpClient port and the ESP listenning port
+        protected static UdpClient Client= new UdpClient(8787);
 
-        protected readonly string querry = "ping";
-        protected readonly string answer = "pong"; //a0
+        protected static readonly string querry = "ping";
+        protected static readonly string answer = "pong"; //a0
         #endregion  
 
         protected static bool staticConnected = false;
@@ -71,7 +71,7 @@ namespace SynLight.Model
             }
         }
 
-        private void Recv(IAsyncResult res)
+        private static void Recv(IAsyncResult res)
         {
             endPoint = new IPEndPoint(IPAddress.Any, 8787);
             byte[] received = Client.EndReceive(res, ref endPoint);
@@ -95,8 +95,9 @@ namespace SynLight.Model
             multiplePayload = 2,
             terminalPayload = 3,
         }
-        private bool once = true;
-        protected void SendPayload(PayloadType plt, List<byte> payload)
+        private static bool once = true;
+        public static bool networkReachable = false;
+        protected static void SendPayload(PayloadType plt, List<byte> payload)
         {
             payload.Insert(0, (byte)plt);
             payload.Insert(0, (byte)('A')); //magic number #1, helps eliminate the junk that is broadcasted on the network
@@ -104,12 +105,15 @@ namespace SynLight.Model
             try
             {
                 sock.SendTo(payload.ToArray(), endPoint);
+                networkReachable = true;
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                networkReachable = false;
+                Startup.MobileHotstop();
+                //Environment.Exit(1);
             }
-
+            
             //for (int n = 2; n < payload.Count-2;n+=3)
             //{
             //    int i = payload[n] + payload[n+1] + payload[n+2];
@@ -117,7 +121,7 @@ namespace SynLight.Model
             //}
             //Console.WriteLine();
         }
-        protected void SendPayload(PayloadType plt, List<byte> payload, EndPoint edp)
+        protected static void SendPayload(PayloadType plt, List<byte> payload, EndPoint edp)
         {
             payload.Insert(0, (byte)plt);
             payload.Insert(0, (byte)('A')); //magic number #1, helps eliminate the junk that is broadcasted on the network
@@ -128,7 +132,8 @@ namespace SynLight.Model
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                System.Threading.Thread.Sleep(100);
+                //MessageBox.Show(e.ToString());
             }
 
             //for (int n = 2; n < payload.Count-2;n+=3)
@@ -138,7 +143,7 @@ namespace SynLight.Model
             //}
             //Console.WriteLine();
         }
-        protected void SendPayload(PayloadType plt, byte r=0)
+        protected static void SendPayload(PayloadType plt, byte r=0)
         {
             List<byte> payload = new List<byte>();
             payload.Insert(0, r);
@@ -153,7 +158,7 @@ namespace SynLight.Model
             }
             catch { }
         }
-        protected void SendPayload(PayloadType plt, byte r = 0, byte g = 0, byte b = 0)
+        protected static void SendPayload(PayloadType plt, byte r = 0, byte g = 0, byte b = 0)
         {
             List<byte> payload = new List<byte>();
             payload.Insert(0, b);

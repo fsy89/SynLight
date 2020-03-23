@@ -26,19 +26,16 @@ namespace SynLight.Model
                 //If not connected, try to reconnect
                 Tittle = "SynLight - Trying to connect ...";
                 FindNodeMCU();
-                if(staticConnected) { break; }
                 Thread.Sleep(2000);
             }
             CanPlayPause = true;
             PlayPause = true;
             processMainLoop.Start();
         }
-
         #region Privates methodes
-        Stopwatch watch;
-        int Hz;
         private void CheckMethod()
-        {            
+        {
+            Stopwatch watch;
             while (PlayPause)
             {
                 //Start measuring how much time it takes to complete the task from here ... [1]
@@ -53,18 +50,23 @@ namespace SynLight.Model
                 else if (Mix == 100)
                 {
                     //Only send the static color payload once in a while, or if the selected color has changed
-                    for(int n=0;((n< 100) && (!staticColorChanged));n++)
+                    for (int n = 0; ((n < 1000) && (!staticColorChanged)); n++)
                     {
-                        Thread.Sleep(10);
+                        Thread.Sleep(1);
                     }
                     SingleColor();
+                }
+
+                if (!networkReachable)
+                {
+                    Thread.Sleep(500);
                 }
 
                 GC.Collect(); //Saves a couple MB
 
                 //[1] ... to here
                 watch.Stop();
-                Hz = (int)(1000.0 / watch.ElapsedMilliseconds);
+                int Hz = (int)(1000.0 / watch.ElapsedMilliseconds);
                 Tittle = "Synlight - " + Hz.ToString() + "Hz";
             }
             //Immediately turns of the LEDS after pressing the Stop button
@@ -86,7 +88,7 @@ namespace SynLight.Model
             _Wigth = Width;
             _Corner = Corner;
             _Shifting = Shifting;
-            
+
             //GetScreenShot(); //Old method
             GetScreenShotedges();
 
@@ -97,21 +99,21 @@ namespace SynLight.Model
                 GetAndProcessScreenPart(rect);
                 tryGetAndProcessScreenPart = false; //To execute only once, remove for continuous operation
             }
-            
+
             if (Contrast > 0)
             {
                 scaledBmpScreenshot = AdjustContrast(scaledBmpScreenshot, (float)Contrast);
             }
             ProcessScreenShot();
-            if(Mix > 0)
+            if (Mix > 0)
             {
                 int bl = Mix;
                 List<byte> bts = new List<byte>(byteToSend);
                 for (int n = 0; n < byteToSend.Count - 2; n += 3)
                 {
-                    bts[n] = (byte)(byteToSend[n] * ((100.0 - bl)/100.0) + Red * (bl/100.0));
-                    bts[n+1] = (byte)(byteToSend[n+1] * ((100.0 - bl) / 100.0) + Green * (bl / 100.0));
-                    bts[n+2] = (byte)(byteToSend[n+2] * ((100.0 - bl) / 100.0) + Blue * (bl / 100.0));
+                    bts[n] = (byte)(byteToSend[n] * ((100.0 - bl) / 100.0) + Red * (bl / 100.0));
+                    bts[n + 1] = (byte)(byteToSend[n + 1] * ((100.0 - bl) / 100.0) + Green * (bl / 100.0));
+                    bts[n + 2] = (byte)(byteToSend[n + 2] * ((100.0 - bl) / 100.0) + Blue * (bl / 100.0));
                 }
                 byteToSend = new List<byte>(bts);
             }
@@ -123,7 +125,7 @@ namespace SynLight.Model
             Value = (100.0f + Value) / 100.0f;
             Value *= Value;
             Bitmap NewBitmap = (Bitmap)Image.Clone();
-            BitmapData data = NewBitmap.LockBits(new Rectangle(0, 0, NewBitmap.Width, NewBitmap.Height),ImageLockMode.ReadWrite,NewBitmap.PixelFormat);
+            BitmapData data = NewBitmap.LockBits(new Rectangle(0, 0, NewBitmap.Width, NewBitmap.Height), ImageLockMode.ReadWrite, NewBitmap.PixelFormat);
             int Height = NewBitmap.Height;
             int Width = NewBitmap.Width;
 
@@ -225,7 +227,7 @@ namespace SynLight.Model
                 //Network parameters
                 System.Net.IPAddress ip = System.Net.IPAddress.Parse("192.168.1.123");
                 int port = 8787;
-                System.Net.IPEndPoint edp = new System.Net.IPEndPoint(ip,port);
+                System.Net.IPEndPoint edp = new System.Net.IPEndPoint(ip, port);
 
                 //Sending with custom Endpoint
                 SendPayload(PayloadType.fixedColor, screenPartToSend, edp);
@@ -605,9 +607,6 @@ namespace SynLight.Model
         private bool black = false;
         private void Send()
         {
-            Screen2Visible = true;
-            Screen3Visible = true;
-
             //Old stuff. Latests W10 builds seem to support in-game screenshot ...
             #region If the screen is black ...
             black = true;
@@ -627,7 +626,8 @@ namespace SynLight.Model
                     sock.SendTo(new byte[] { (byte)('A'), (byte)PayloadType.fixedColor, 5 }, endPoint);
                 }
             }
-            #endregion   
+            #endregion
+
             else
             {
                 newByteToSend = new List<byte>(0);
@@ -690,7 +690,7 @@ namespace SynLight.Model
         private int difference = 0;
         private int lastDifference = -1; //Used for low-pass filtering
         private const int minDif = 100;
-        private const int maxDif = 3600;
+        private const int maxDif = 4000;
         private void CalculateSleepTime()
         {
             if (lastByteToSend.Count != byteToSend.Count)
@@ -706,17 +706,23 @@ namespace SynLight.Model
                 }
             }
 
-            difference = Math.Min(difference, maxDif);
-            difference = Math.Max(difference, minDif);
+            difference = Math.Min(Math.Max(difference, minDif), maxDif);
             difference -= minDif;
-            difference = (int)Math.Round(Map(difference, 0, maxDif-minDif, minDif, 0));
-            difference += (int)Math.Round(cpuCounter.NextValue());
+            difference = (int)Math.Round(Map(difference, 0, maxDif - minDif, minDif, 0));
+            //if(cpuCounter != null)
+            //{
+            //    difference += (int)Math.Round(cpuCounter.NextValue());
+            //}
+            //else
+            //{
+            //    difference += 5;
+            //}
+            //difference += 100;
 
-            if(lastDifference != -1) //Skips if first time
+            if (lastDifference != -1) //Skips if first time
             {
-                difference = (difference + lastDifference) >> 1;
+                difference = (difference + lastDifference)/2;
             }
-
             lastDifference = difference;
         }
         private double Map(double s, double a1, double a2, double b1, double b2)
@@ -754,17 +760,17 @@ namespace SynLight.Model
 
             for (int n = 0; n < byteToSend.Count - 2; n += 3)
             {
-                s = (newByteToSend[n] * ((1.5 + fluxRatio) / 2.5)).ToString().Replace('.',',').Split(',')[0];
+                s = (newByteToSend[n] * ((1.5 + fluxRatio) / 2.5)).ToString().Replace('.', ',').Split(',')[0];
                 b = byte.Parse(s);
                 newByteToSend[n] = b;
 
-                s = (newByteToSend[n+1] * ((0.6+fluxRatio)/1.6)).ToString().Replace('.', ',').Split(',')[0];
+                s = (newByteToSend[n + 1] * ((0.6 + fluxRatio) / 1.6)).ToString().Replace('.', ',').Split(',')[0];
                 b = byte.Parse(s);
-                newByteToSend[n+1] = b;
+                newByteToSend[n + 1] = b;
 
-                s = (newByteToSend[n+2] * (fluxRatio/1.2)).ToString().Replace('.', ',').Split(',')[0];
+                s = (newByteToSend[n + 2] * (fluxRatio / 1.2)).ToString().Replace('.', ',').Split(',')[0];
                 b = byte.Parse(s);
-                newByteToSend[n+2] = b;
+                newByteToSend[n + 2] = b;
             }
         }
         #endregion
