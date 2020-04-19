@@ -6,6 +6,7 @@ using System.Threading;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace SynLight.Model
 {
@@ -13,22 +14,24 @@ namespace SynLight.Model
     {
         public Process_SynLight()
         {
-            bmpScreenshot = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
-            processFindESP = new Thread(FindESP);
+            bmpScreenshot = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight,PixelFormat.Format24bppRgb);
+            //processFindESP = new Thread(FindESP);
             processMainLoop = new Thread(CheckMethod);
-            processFindESP.Start();
+            PlayPause = true;
+            processMainLoop.Start();
+            //processFindESP.Start();
         }
 
         #region Handlers
         private void FindESP()
         {
-            while (!staticConnected)
-            {
-                //If not connected, try to reconnect
-                Tittle = "SynLight - Trying to connect ...";
-                FindNodeMCU();
-                Thread.Sleep(2000);
-            }
+            //while (!staticConnected && false)
+            //{
+            //    //If not connected, try to reconnect
+            //    Tittle = "SynLight - Trying to connect ...";
+            //    FindNodeMCU();
+            //    Thread.Sleep(2000);
+            //}
             CanPlayPause = true;
             PlayPause = true;
             processMainLoop.Start();
@@ -36,8 +39,10 @@ namespace SynLight.Model
         private void CheckMethod()
         {
             Stopwatch watch;
+            debug = true;
             while (PlayPause)
             {
+                Thread.Sleep(500);
                 //Start measuring how much time it takes to complete the task from here ... [1]
                 watch = Stopwatch.StartNew();
 
@@ -55,10 +60,10 @@ namespace SynLight.Model
                     SingleColor();
                 }
 
-                if (!networkReachable)
-                {
-                    Thread.Sleep(500);
-                }
+                //if (!networkReachable)
+                //{
+                //    Thread.Sleep(500);
+                //}
 
                 GC.Collect(); //Saves a couple MB
 
@@ -68,7 +73,7 @@ namespace SynLight.Model
                 Tittle = "Synlight - " + Hz.ToString() + "Hz";
             }
             //Immediately turns off the LEDS after pressing the Stop button
-            SendPayload(PayloadType.fixedColor, 0);
+            //SendPayload(PayloadType.fixedColor, 0);
             processMainLoop = new Thread(CheckMethod);
 
             Tittle = "Synlight - Paused";
@@ -89,6 +94,7 @@ namespace SynLight.Model
 
             //GetScreenShot(); //Old method
             GetScreenShotedges();
+            //GetScreenShotSafe();
 
             //Test for standalone beacon
             //if (tryGetAndProcessScreenPart)
@@ -116,7 +122,7 @@ namespace SynLight.Model
                 byteToSend = new List<byte>(bts);
             }
 
-            Send();
+            //Send();
         }
         #endregion
 
@@ -186,7 +192,7 @@ namespace SynLight.Model
             }
             catch
             {
-                scaledBmpScreenshot = new Bitmap(1, 1);
+                scaledBmpScreenshot = new Bitmap(1, 1,PixelFormat.Format24bppRgb);
                 scaledBmpScreenshot.SetPixel(0, 0, Color.Black);
             }
         }
@@ -206,7 +212,7 @@ namespace SynLight.Model
                 };
 
                 //Copy from GetScreenShotedges
-                Bitmap bmpBeacon = new Bitmap((int)rect.Width, (int)rect.Height, PixelFormat.Format32bppRgb);
+                Bitmap bmpBeacon = new Bitmap((int)rect.Width, (int)rect.Height, PixelFormat.Format24bppRgb);
                 Graphics gfxScreenshot = Graphics.FromImage(bmpBeacon);
                 //Should always be Left/Top/0/0
                 gfxScreenshot.CopyFromScreen((int)rect.Left, (int)rect.Top, 0, 0, bmpBeacon.Size);
@@ -251,6 +257,8 @@ namespace SynLight.Model
             {
             }
         }
+
+        private bool debug = true;
         private void GetScreenShotedges()
         {
             try
@@ -267,28 +275,28 @@ namespace SynLight.Model
                 endY -= ((_Shifting * hY) / _Height) / 2;
 
                 rect = new Rectangle(startX, startY, startX + (hX / _Wigth), endY);
-                bmp = new Bitmap(hX / _Wigth, hY, PixelFormat.Format32bppRgb);
+                bmp = new Bitmap(hX / _Wigth, hY, PixelFormat.Format24bppRgb);
                 Graphics gfxScreenshot = Graphics.FromImage(bmp);
                 gfxScreenshot.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size);
                 scalededgeLeft = new Bitmap(bmp, 1, _Height);
                 gfxScreenshot.Clear(Color.Empty);
 
                 rect = new Rectangle(endX - (hX / _Wigth), startY, startX + (hX / _Wigth), endY);
-                bmp = new Bitmap(hX / _Wigth, hY, PixelFormat.Format32bppRgb);
+                bmp = new Bitmap(hX / _Wigth, hY, PixelFormat.Format24bppRgb);
                 Graphics gfxScreenshot2 = Graphics.FromImage(bmp);
                 gfxScreenshot2.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size);
                 scalededgeRight = new Bitmap(bmp, 1, _Height);
                 gfxScreenshot2.Clear(Color.Empty);
 
                 rect = new Rectangle(startX, startY, endX, startY + (hY / _Height));
-                bmp = new Bitmap(hX, hY / _Height, PixelFormat.Format32bppRgb);
+                bmp = new Bitmap(hX, hY / _Height, PixelFormat.Format24bppRgb);
                 Graphics gfxScreenshot3 = Graphics.FromImage(bmp);
                 gfxScreenshot3.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size);
                 scalededgeTop = new Bitmap(bmp, _Wigth, 1);
                 gfxScreenshot3.Clear(Color.Empty);
 
                 rect = new Rectangle(startX, endY - (hY / _Height), endX, endY);
-                bmp = new Bitmap(hX, hY / _Height, PixelFormat.Format32bppRgb);
+                bmp = new Bitmap(hX, hY / _Height, PixelFormat.Format24bppRgb);
                 Graphics gfxScreenshot4 = Graphics.FromImage(bmp);
                 gfxScreenshot4.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size);
                 scalededgeBot = new Bitmap(bmp, _Wigth, 1);
@@ -298,13 +306,17 @@ namespace SynLight.Model
 
                 for (int n = 0; n < scalededgeLeft.Height; n++)
                 {
-                    scaledBmpScreenshot.SetPixel(0, n, scalededgeLeft.GetPixel(0, n));
-                    scaledBmpScreenshot.SetPixel(_Wigth - 1, n, scalededgeRight.GetPixel(0, n));
+                    var tmp = Color.FromArgb(255, scalededgeLeft.GetPixel(0, n).R, scalededgeLeft.GetPixel(0, n).G, scalededgeLeft.GetPixel(0, n).B);
+                    var tmp2 = Color.FromArgb(255, scalededgeRight.GetPixel(0, n).R, scalededgeRight.GetPixel(0, n).G, scalededgeRight.GetPixel(0, n).B);
+                    scaledBmpScreenshot.SetPixel(0, n, tmp);
+                    scaledBmpScreenshot.SetPixel(_Wigth - 1, n, tmp2);
                 }
                 for (int n = 1; n < scalededgeTop.Width - 1; n++)
                 {
-                    scaledBmpScreenshot.SetPixel(n, 0, scalededgeTop.GetPixel(n, 0));
-                    scaledBmpScreenshot.SetPixel(n, _Height - 1, scalededgeBot.GetPixel(n, 0));
+                    var tmp = Color.FromArgb(255, scalededgeTop.GetPixel(n, 0).R, scalededgeTop.GetPixel(n, 0).G, scalededgeTop.GetPixel(n, 0).B);
+                    var tmp2 = Color.FromArgb(255, scalededgeBot.GetPixel(n, 0).R, scalededgeBot.GetPixel(n, 0).G, scalededgeBot.GetPixel(n, 0).B);
+                    scaledBmpScreenshot.SetPixel(n, 0, tmp);
+                    scaledBmpScreenshot.SetPixel(n, _Height - 1, tmp2);
                 }
 
                 //Capturing the very first frame in various formats
@@ -313,11 +325,12 @@ namespace SynLight.Model
                     try
                     {
                         debug = false;
-                        ResizeSizes(scalededgeLeft).Save("1Left.bmp");
-                        ResizeSizes(scalededgeRight).Save("3Right.bmp");
-                        ResizeTops(scalededgeTop).Save("2Top.bmp");
-                        ResizeTops(scalededgeBot).Save("4Bot.bmp");
-                        Resize(scaledBmpScreenshot).Save("5full.bmp");
+                        ResizeSizes(scalededgeLeft).Save("1Left.png",ImageFormat.Png);
+                        ResizeSizes(scalededgeRight).Save("3Right.png", ImageFormat.Png);
+                        ResizeTops(scalededgeTop).Save("2Top.png", ImageFormat.Png);
+                        ResizeTops(scalededgeBot).Save("4Bot.png", ImageFormat.Png);
+                        Resize(scaledBmpScreenshot).Save("5full.png", ImageFormat.Png);
+
                     }
                     catch
                     {
@@ -326,13 +339,23 @@ namespace SynLight.Model
             }
             catch
             {
-                scalededgeLeft = new Bitmap(1, 1);
+                scalededgeLeft = new Bitmap(1, 1, PixelFormat.Format24bppRgb);
                 scalededgeLeft.SetPixel(0, 0, Color.Black);
             }
         }
+
+        private void GetScreenShotSafe()
+        {
+            using (Graphics g = Graphics.FromImage(bmpScreenshot))
+            {
+                g.CopyFromScreen(0, 0, 0, 0, Screen.PrimaryScreen.Bounds.Size);
+                scaledBmpScreenshot = new Bitmap(bmpScreenshot, Width, Height);
+            }
+        }
+
         private Bitmap Resize(Bitmap srcImage)
         {
-            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight, PixelFormat.Format24bppRgb);
             using (Graphics gr = Graphics.FromImage(newImage))
             {
                 gr.SmoothingMode = SmoothingMode.HighQuality;
@@ -344,7 +367,7 @@ namespace SynLight.Model
         }
         private Bitmap ResizeSizes(Bitmap srcImage)
         {
-            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth / Width, (int)SystemParameters.PrimaryScreenHeight);
+            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth / Width, (int)SystemParameters.PrimaryScreenHeight, PixelFormat.Format24bppRgb);
             using (Graphics gr = Graphics.FromImage(newImage))
             {
                 gr.SmoothingMode = SmoothingMode.HighQuality;
@@ -356,7 +379,7 @@ namespace SynLight.Model
         }
         private Bitmap ResizeTops(Bitmap srcImage)
         {
-            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight / Height);
+            Bitmap newImage = new Bitmap((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight / Height, PixelFormat.Format24bppRgb);
             using (Graphics gr = Graphics.FromImage(newImage))
             {
                 gr.SmoothingMode = SmoothingMode.HighQuality;
@@ -654,7 +677,7 @@ namespace SynLight.Model
             else
                 lastByteToSend = newByteToSend = byteToSend;
 
-            if(BGF)
+            if (BGF)
             {
                 //REMOVED BECAUSE OF RESSOURCE USAGE, MIGHT MAKE A COMEBACK
             }
@@ -697,10 +720,10 @@ namespace SynLight.Model
             difference -= minDif;
             difference = (int)Math.Round(Map(difference, 0, maxDif - minDif, minDif, 0));
 
-            if (cpuCounter != null)
-                difference += (int)Math.Round(cpuCounter.NextValue());
-            else
-                difference += 5;
+            //if (cpuCounter != null)
+            //    difference += (int)Math.Round(cpuCounter.NextValue());
+            //else
+            //    difference += 5;
 
             difference += 100;
 

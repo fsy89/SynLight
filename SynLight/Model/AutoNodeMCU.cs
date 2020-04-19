@@ -18,10 +18,10 @@ namespace SynLight.Model
 
         protected static readonly string querry = "ping";
         protected static readonly string answer = "pong"; //a0
-        #endregion  
 
         protected static bool staticConnected = false;
         private readonly bool multipleESP = false;
+        #endregion  
 
         public AutoNodeMCU()
         {
@@ -44,7 +44,7 @@ namespace SynLight.Model
 
                     if (staticConnected) //If we received "pong"
                     {
-                        if (multipleESP) //Can be added to a list of ESP, maybe supported in the futur
+                        if (multipleESP) //Can be added to a list of ESP, maybe supported in the future
                             sockList.Add(sock);
                         else //We found the single ESP, the current IP address if the ESP IP address, just return;
                             break;

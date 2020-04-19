@@ -346,11 +346,11 @@ namespace SynLight.Model
             set
             {
                 playPause = value;
-                System.Threading.Thread.Sleep(10);
-                if (playPause && !processMainLoop.IsAlive && !processFindESP.IsAlive)
-                {
-                    processMainLoop.Start();
-                }
+                //System.Threading.Thread.Sleep(10);
+                //if (playPause && !processMainLoop.IsAlive && !processFindESP.IsAlive)
+                //{
+                //    processMainLoop.Start();
+                //}
                 OnPropertyChanged("PlayPause");
             }
         }
@@ -492,8 +492,8 @@ namespace SynLight.Model
         protected Bitmap scalededgeRight;
         protected Bitmap scalededgeTop;
         protected Bitmap scalededgeBot;
+        protected Bitmap SimpleFull;
         protected bool screenConfigured = false;
-        protected bool debug = false;
         protected int startX;
         protected int startY;
         protected int endX;
@@ -507,8 +507,8 @@ namespace SynLight.Model
         protected List<byte> newByteToSend = new List<byte>(0);
         protected List<byte> byteToSend;
 
-        protected PerformanceCounter cpuCounter = null;
-        protected System.Threading.Thread processFindESP;
+        //protected PerformanceCounter cpuCounter = null;
+        //protected System.Threading.Thread processFindESP;
         protected System.Threading.Thread processMainLoop;
 
         #endregion
@@ -517,7 +517,7 @@ namespace SynLight.Model
         {
             try
             {   //In case of falty Windows Update (LODCTR /r)
-                cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                //cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             }
             catch
             {
