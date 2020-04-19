@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
+//using System.Management.Automation;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -16,19 +16,19 @@ namespace SynLight.Model
         /// </summary>
         public static void MobileHotstop()
         {
-            using (PowerShell PowerShellInstance = PowerShell.Create())
-            {
-                string psScript = "$connectionProfile = [Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]::GetInternetConnectionProfile()\n$tetheringManager = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager,Windows.Networking.NetworkOperators,ContentType=WindowsRuntime]::CreateFromConnectionProfile($connectionProfile)\n$v1 = 25\n$v2 = 0\nwhile($tetheringManager.TetheringOperationalState -eq \"Off\")\n{\n$a = [\nWindows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]::CreateFromConnectionProfile([Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]::GetInternetConnectionProfile())\n$a.StartTetheringAsync()\nStart-Sleep -Seconds 0.5\necho $v2\n    $v2 = $v2 + 1\nif($v2 -le $v1)\n{\nbreak\n}\n}";
-                //PowerShellInstance.AddScript("$a = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]::CreateFromConnectionProfile([Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]::GetInternetConnectionProfile())\n$a.StartTetheringAsync()");
-                PowerShellInstance.AddScript(psScript);
-                IAsyncResult result = PowerShellInstance.BeginInvoke();
-                while (result.IsCompleted == false)
-                {
-                    Console.WriteLine("Waiting for pipeline to finish...");
-                    Thread.Sleep(5);
-                }
-                Console.WriteLine("Modile Hotstop started!");
-            }
+            //using (PowerShell PowerShellInstance = PowerShell.Create())
+            //{
+            //    string psScript = "$connectionProfile = [Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]::GetInternetConnectionProfile()\n$tetheringManager = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager,Windows.Networking.NetworkOperators,ContentType=WindowsRuntime]::CreateFromConnectionProfile($connectionProfile)\n$v1 = 25\n$v2 = 0\nwhile($tetheringManager.TetheringOperationalState -eq \"Off\")\n{\n$a = [\nWindows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]::CreateFromConnectionProfile([Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]::GetInternetConnectionProfile())\n$a.StartTetheringAsync()\nStart-Sleep -Seconds 0.5\necho $v2\n    $v2 = $v2 + 1\nif($v2 -le $v1)\n{\nbreak\n}\n}";
+            //    //PowerShellInstance.AddScript("$a = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]::CreateFromConnectionProfile([Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]::GetInternetConnectionProfile())\n$a.StartTetheringAsync()");
+            //    PowerShellInstance.AddScript(psScript);
+            //    IAsyncResult result = PowerShellInstance.BeginInvoke();
+            //    while (result.IsCompleted == false)
+            //    {
+            //        Console.WriteLine("Waiting for pipeline to finish...");
+            //        Thread.Sleep(5);
+            //    }
+            //    Console.WriteLine("Modile Hotstop started!");
+            //}
         }
 
 
@@ -75,62 +75,62 @@ namespace SynLight.Model
         public static void CleanFiles()
         {
             //Do not clean if not on /bin/Debug
-            var tmp = Directory.GetCurrentDirectory();
-            string tmp2 = tmp.Split('\\')[tmp.Split('\\').Length-1].ToLower();
-            if(tmp2 != "debug")
-            {
-                return;
-            }
-            //.vs
-            try
-            {
-                string[] vsPathSplits = Directory.GetCurrentDirectory().Split('\\');
-                string vsPath = "";
-                for(int n = 0; n < vsPathSplits.Length-3;n++)
-                {
-                    vsPath += vsPathSplits[n] + '\\';
-                }
-                Directory.Delete(vsPath + ".vs", true);
-                File.Delete(vsPath + "README.md");
-            }
-            catch{ }
+            //var tmp = Directory.GetCurrentDirectory();
+            //string tmp2 = tmp.Split('\\')[tmp.Split('\\').Length-1].ToLower();
+            //if(tmp2 != "debug")
+            //{
+            //    return;
+            //}
+            ////.vs
+            //try
+            //{
+            //    string[] vsPathSplits = Directory.GetCurrentDirectory().Split('\\');
+            //    string vsPath = "";
+            //    for(int n = 0; n < vsPathSplits.Length-3;n++)
+            //    {
+            //        vsPath += vsPathSplits[n] + '\\';
+            //    }
+            //    Directory.Delete(vsPath + ".vs", true);
+            //    File.Delete(vsPath + "README.md");
+            //}
+            //catch{ }
 
-            //obj
-            try
-            {
-                string[] objPathSplits = Directory.GetCurrentDirectory().Split('\\');
-                string objPath = "";
-                for (int n = 0; n < objPathSplits.Length - 2; n++)
-                {
-                    objPath += objPathSplits[n] + '\\';
-                }
-                objPath += "obj";
-                Directory.Delete(objPath, true);
-            }
-            catch { }
+            ////obj
+            //try
+            //{
+            //    string[] objPathSplits = Directory.GetCurrentDirectory().Split('\\');
+            //    string objPath = "";
+            //    for (int n = 0; n < objPathSplits.Length - 2; n++)
+            //    {
+            //        objPath += objPathSplits[n] + '\\';
+            //    }
+            //    objPath += "obj";
+            //    Directory.Delete(objPath, true);
+            //}
+            //catch { }
 
-            //bin
-            try
-            {
-                string process = Process.GetCurrentProcess().ToString().Split('(')[1];
-                process = process.Remove(process.Length - 2) + ".exe";
-                string[] fileList = Directory.GetFiles(Directory.GetCurrentDirectory());
-                foreach (string file in fileList)
-                {
-                    string[] fileSplit = file.Split('\\');
-                    string split = fileSplit[fileSplit.Length - 1];
+            ////bin
+            //try
+            //{
+            //    string process = Process.GetCurrentProcess().ToString().Split('(')[1];
+            //    process = process.Remove(process.Length - 2) + ".exe";
+            //    string[] fileList = Directory.GetFiles(Directory.GetCurrentDirectory());
+            //    foreach (string file in fileList)
+            //    {
+            //        string[] fileSplit = file.Split('\\');
+            //        string split = fileSplit[fileSplit.Length - 1];
                     
-                    if (split != "param.txt" && split != process && split.Contains(".ps1"))
-                    {
-                        try
-                        {
-                            File.Delete(file);
-                        }
-                        catch { }
-                    }
-                }
-            }
-            catch { }
+            //        if (split != "param.txt" && split != process && split.Contains(".ps1"))
+            //        {
+            //            try
+            //            {
+            //                File.Delete(file);
+            //            }
+            //            catch { }
+            //        }
+            //    }
+            //}
+            //catch { }
         }
         /// <summary>
         /// Check if the MainForm is to be shown or not
@@ -138,6 +138,7 @@ namespace SynLight.Model
         /// <returns></returns>
         public static bool ShowOrHide()
         {
+            return false;
             try
             {
                 using (StreamReader sr = new StreamReader(Param_SynLight.param))
